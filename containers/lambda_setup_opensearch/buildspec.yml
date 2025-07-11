@@ -1,0 +1,25 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: MIT-0
+
+version: 0.2
+
+# REQUIRED ENVIRONMENT VARIABLES
+# AWS_ACCOUNT_ID  - AWS account id  (e.g. 555555555555)
+# IMAGE_REPO_NAME - name of target ECR repository (use "chatbot_prod_lambda_setup_opensearch" unless this is already being used)
+
+phases:
+  pre_build:
+    commands:
+       - cd containers/lambda_setup_opensearch
+       - echo `pwd`
+       - echo Logging in to Amazon ECR...
+       - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
+  build:
+    commands:
+       - docker build -t $IMAGE_REPO_NAME .
+       - docker tag $IMAGE_REPO_NAME:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:latest
+  post_build:
+    commands:
+       - echo Build completed on `date`
+       - echo Pushing the Docker image...
+       - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:latest
